@@ -258,6 +258,10 @@ dependencies {
     implementation fg.deobf("maven.modrinth:common-network:1.0.5-1.20.1-forge")
     implementation fg.deobf("maven.modrinth:just-more-cakes:1.18.1-forge,1.20.1")
 
+    // 莱特兰背包
+    implementation fg.deobf("maven.modrinth:l2library:2.5.3")
+    implementation fg.deobf("maven.modrinth:l2backpack:2.5.8")
+
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 
     // runtimeOnly fg.deobf("curse.maven:carry-on-274259:4882500")

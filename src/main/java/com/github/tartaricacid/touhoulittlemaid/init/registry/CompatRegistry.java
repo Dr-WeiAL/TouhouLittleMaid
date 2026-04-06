@@ -5,6 +5,7 @@ import com.github.tartaricacid.touhoulittlemaid.compat.carryon.BlackList;
 import com.github.tartaricacid.touhoulittlemaid.compat.cloth.MenuIntegration;
 import com.github.tartaricacid.touhoulittlemaid.compat.curios.CuriosCompat;
 import com.github.tartaricacid.touhoulittlemaid.compat.immersivemelodies.server.ImmersiveMelodiesServerCompat;
+import com.github.tartaricacid.touhoulittlemaid.compat.l2backpack.L2BackpackCompat;
 import com.github.tartaricacid.touhoulittlemaid.compat.patchouli.PatchouliCompat;
 import com.github.tartaricacid.touhoulittlemaid.compat.sbackpack.SBackpackCompat;
 import com.github.tartaricacid.touhoulittlemaid.compat.top.TheOneProbeInfo;
@@ -24,6 +25,7 @@ public final class CompatRegistry {
     public static final String CLOTH_CONFIG = "cloth_config";
     public static final String CARRY_ON = "carryon";
     public static final String SBACKPACK = "sophisticatedbackpacks";
+    public static final String L2BACKPACK = "l2backpack";
     public static final String CURIOS = "curios";
     public static final String IMMERSIVE_MELODIES = "immersive_melodies";
 
@@ -43,6 +45,7 @@ public final class CompatRegistry {
         });
         event.enqueueWork(() -> checkModLoad(CARRY_ON, BlackList::addBlackList));
         event.enqueueWork(() -> checkModLoad(SBACKPACK, SBackpackCompat::init));
+        event.enqueueWork(() -> checkModLoad(L2BACKPACK, L2BackpackCompat::init));
         event.enqueueWork(() -> checkModLoad(CURIOS, CuriosCompat::init));
         event.enqueueWork(() -> checkModLoad(IMMERSIVE_MELODIES, ImmersiveMelodiesServerCompat::init));
     }
