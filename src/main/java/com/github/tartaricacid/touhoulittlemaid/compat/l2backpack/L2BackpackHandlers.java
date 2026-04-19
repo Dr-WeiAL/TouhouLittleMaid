@@ -80,7 +80,7 @@ public class L2BackpackHandlers {
 		boolean simulate = event.isSimulate();
 
 		// 只在服务端处理有效实体
-		if (maid.level.isClientSide || !itemEntity.isAlive()) {
+		if (maid.level.isClientSide || !itemEntity.isAlive() || itemEntity.hasPickUpDelay()) {
 			return;
 		}
 
