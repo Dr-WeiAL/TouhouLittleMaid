@@ -119,10 +119,9 @@ public class L2BackpackHandlers {
 			return false;
 		}
 		if (!simulate) {
-			itemEntity.setItem(remaining);
 			// 最后触发拾取动画和音效，更新实体物品数量
 			// 以及触发 MaidPickupEvent.ItemResultPost 事件
-			handlePickupEffects(maid, itemEntity, itemStack, originCount);
+			handlePickupEffects(maid, itemEntity, remaining, originCount);
 		}
 		return true;
 	}
