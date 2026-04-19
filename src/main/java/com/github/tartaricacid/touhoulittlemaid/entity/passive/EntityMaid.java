@@ -19,8 +19,6 @@ import com.github.tartaricacid.touhoulittlemaid.client.resource.CustomPackLoader
 import com.github.tartaricacid.touhoulittlemaid.client.resource.pojo.MaidModelInfo;
 import com.github.tartaricacid.touhoulittlemaid.compat.curios.CuriosCompat;
 import com.github.tartaricacid.touhoulittlemaid.compat.domesticationinnovation.PetBedDrop;
-import com.github.tartaricacid.touhoulittlemaid.compat.l2backpack.L2BackpackCompat;
-import com.github.tartaricacid.touhoulittlemaid.compat.l2backpack.L2BackpackHandlers;
 import com.github.tartaricacid.touhoulittlemaid.compat.slashblade.SlashBladeCompat;
 import com.github.tartaricacid.touhoulittlemaid.compat.ysm.YsmCompat;
 import com.github.tartaricacid.touhoulittlemaid.compat.ysm.event.YsmMaidClientTickEvent;
@@ -150,7 +148,6 @@ import net.minecraftforge.common.util.ITeleporter;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.event.ForgeEventFactory;
 import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.IItemHandlerModifiable;
 import net.minecraftforge.items.ItemHandlerHelper;
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.wrapper.CombinedInvWrapper;
@@ -766,14 +763,7 @@ public class EntityMaid extends TamableAnimal implements CrossbowAttackMob, IMai
             }
             // 获取数量，为后面方面用
             int count = itemstack.getCount();
-            // 先尝试插入L2背包，遵循背包拾取模式
-            if (L2BackpackCompat.isLoaded()) {
-                itemstack = L2BackpackHandlers.insertToBackpack(this, itemstack, simulate);
-            }
-            // 如果L2背包不接受，再尝试放入女仆物品栏
-            if (!itemstack.isEmpty()) {
-                itemstack = ItemHandlerHelper.insertItemStacked(getAvailableInv(false), itemstack, simulate);
-            }
+            itemstack = ItemHandlerHelper.insertItemStacked(getAvailableInv(false), itemstack, simulate);
             if (count == itemstack.getCount()) {
                 return false;
             }
@@ -2305,7 +2295,6 @@ public class EntityMaid extends TamableAnimal implements CrossbowAttackMob, IMai
 
     /**
      * 返回 MaidInvWrapper，方便触发 MaidRequestItemEvent 事件时使用
-     * 包含：女仆物品栏、手持物品、L2背包内容（可选）
      */
     public CombinedInvWrapper getAvailableInv(boolean handsFirst) {
         int maxContainerIndex = getMaidBackpackType().getAvailableMaxContainerIndex();
@@ -2455,22 +2444,13 @@ public class EntityMaid extends TamableAnimal implements CrossbowAttackMob, IMai
 
     public void dropResourcesToMaidInv(BlockState state, Level level, BlockPos pos, @Nullable BlockEntity blockEntity, EntityMaid maid, ItemStack tool) {
         if (level instanceof ServerLevel serverLevel) {
-            // 获取女仆物品栏（已包含L2背包内容）
             CombinedInvWrapper availableInv = this.getAvailableInv(false);
-            // 先尝试插入L2背包
-            List<ItemStack> drops = Block.getDrops(state, serverLevel, pos, blockEntity, maid, tool);
-            for (ItemStack stack : drops) {
-                // 尝试插入L2背包，遵循拾取模式
-                ItemStack remaining = L2BackpackHandlers.insertToBackpack(maid, stack, false);
-                if (!remaining.isEmpty()) {
-                    // 背包无法接收，尝试放入女仆物品栏
-                    remaining = ItemHandlerHelper.insertItemStacked(availableInv, remaining, false);
-                    if (!remaining.isEmpty()) {
-                        // 女仆物品栏也满了，掉落在地上
-                        Block.popResource(level, pos, remaining);
-                    }
+            Block.getDrops(state, serverLevel, pos, blockEntity, maid, tool).forEach(stack -> {
+                ItemStack remindItemStack = ItemHandlerHelper.insertItemStacked(availableInv, stack, false);
+                if (!remindItemStack.isEmpty()) {
+                    Block.popResource(level, pos, remindItemStack);
                 }
-            }
+            });
             state.spawnAfterBreak(serverLevel, pos, tool, true);
         }
     }
