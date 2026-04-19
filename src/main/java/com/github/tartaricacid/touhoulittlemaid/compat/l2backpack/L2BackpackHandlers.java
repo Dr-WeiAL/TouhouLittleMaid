@@ -3,6 +3,7 @@ package com.github.tartaricacid.touhoulittlemaid.compat.l2backpack;
 import com.github.tartaricacid.touhoulittlemaid.api.event.MaidPickupEvent;
 import com.github.tartaricacid.touhoulittlemaid.api.event.MaidRequestItemEvent;
 import com.github.tartaricacid.touhoulittlemaid.compat.curios.CuriosCompat;
+import com.github.tartaricacid.touhoulittlemaid.compat.sbackpack.curios.MaidBackpackCache;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import dev.xkmc.l2backpack.content.backpack.BackpackItem;
 import dev.xkmc.l2backpack.content.capability.PickupModeCap;
@@ -78,34 +79,34 @@ public class L2BackpackHandlers {
 		EntityMaid maid = event.getMaid();
 		ItemEntity itemEntity = event.getEntityItem();
 		boolean simulate = event.isSimulate();
+		if (!tryPickup(maid, itemEntity, simulate)) return;
+		event.setCanPickup(true);
+		event.setCanceled(true);
+	}
 
-		// 只在服务端处理有效实体
-		if (maid.level.isClientSide || !itemEntity.isAlive() || itemEntity.hasPickUpDelay()) {
-			return;
+
+	private boolean tryPickup(EntityMaid maid, ItemEntity itemEntity, boolean simulate) {
+		if (!itemEntity.isAlive() || itemEntity.hasPickUpDelay())
+			return false;
+		if (!(maid.level instanceof ServerLevel serverLevel)) return false;
+		ItemStack itemStack = itemEntity.getItem();
+		if (!EntityMaid.canInsertItem(itemStack)) {
+			return false;
 		}
 
-		ItemStack stack = itemEntity.getItem();
-		// 检查物品是否允许被女仆拾取
-		if (!EntityMaid.canInsertItem(stack)) {
-			return;
-		}
-
-		int originalCount = stack.getCount();
+		int originCount = itemStack.getCount();
 		List<BackpackSlot> backpacks = getBackpacks(maid);
 
 		// 没有背包时不处理
-		if (backpacks.isEmpty()) {
-			return;
-		}
+		if (backpacks.isEmpty()) return false;
 
 		// 使用L2背包原生的拾取机制
 		// 创建PickupTrace来追踪拾取过程
-		if (!(maid.level instanceof ServerLevel serverLevel)) return;
 		PickupTrace trace = new PickupTrace(simulate, serverLevel);
 
 		// 遍历每个背包，调用其doPickup方法
 		int totalPicked = 0;
-		ItemStack remaining = stack.copy();
+		ItemStack remaining = itemStack.copy();
 		for (BackpackSlot bp : backpacks) {
 			PickupModeCap cap = bp.pickup();
 			if (cap == null) continue;
@@ -114,35 +115,30 @@ public class L2BackpackHandlers {
 			if (remaining.isEmpty()) break;
 		}
 
-		// 如果有物品未被拾取，放入女仆物品栏
-		if (!remaining.isEmpty()) {
-			IItemHandler maidInv = maid.getAvailableInv(false);
-			remaining = ItemHandlerHelper.insertItemStacked(maidInv, remaining, simulate);
+		if (originCount == itemStack.getCount()) {
+			return false;
 		}
-
-		// 没有成功放入任何物品时返回
-		if (remaining.getCount() == originalCount) {
-			return;
-		}
-
-		// 设置拾取成功
-		event.setCanPickup(true);
-		event.setCanceled(true);
-
-		// 非模拟模式下执行实际拾取
 		if (!simulate) {
-			int picked = originalCount - remaining.getCount();
-			maid.take(itemEntity, picked);
-			maid.tryPlayMaidPickupSound();
-			// 发送拾取后事件
-			MinecraftForge.EVENT_BUS.post(new MaidPickupEvent.ItemResultPost(maid, new ItemStack(itemEntity.getItem().getItem(), picked)));
+			itemEntity.setItem(remaining);
+			// 最后触发拾取动画和音效，更新实体物品数量
+			// 以及触发 MaidPickupEvent.ItemResultPost 事件
+			handlePickupEffects(maid, itemEntity, itemStack, originCount);
+		}
+		return true;
+	}
 
-			// 更新或移除物品实体
-			if (remaining.isEmpty()) {
-				itemEntity.discard();
-			} else {
-				itemEntity.setItem(remaining);
-			}
+	private void handlePickupEffects(EntityMaid maid, ItemEntity itemEntity, ItemStack remaining, int originCount) {
+		int pickedCount = originCount - remaining.getCount();
+		maid.take(itemEntity, pickedCount);
+		maid.tryPlayMaidPickupSound();
+
+		ItemStack pickedStack = new ItemStack(itemEntity.getItem().getItem(), pickedCount);
+		MinecraftForge.EVENT_BUS.post(new MaidPickupEvent.ItemResultPost(maid, pickedStack));
+
+		if (remaining.isEmpty()) {
+			itemEntity.discard();
+		} else {
+			itemEntity.setItem(remaining);
 		}
 	}
 
