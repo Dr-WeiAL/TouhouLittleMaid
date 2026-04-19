@@ -115,7 +115,7 @@ public class L2BackpackHandlers {
 			if (remaining.isEmpty()) break;
 		}
 
-		if (originCount == itemStack.getCount()) {
+		if (originCount == remaining.getCount()) {
 			return false;
 		}
 		if (!simulate) {
