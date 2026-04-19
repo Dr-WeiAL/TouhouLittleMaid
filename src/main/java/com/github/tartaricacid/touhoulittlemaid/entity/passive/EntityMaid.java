@@ -1541,11 +1541,6 @@ public class EntityMaid extends TamableAnimal implements CrossbowAttackMob, IMai
     public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing) {
         if (this.isAlive() && capability == ForgeCapabilities.ITEM_HANDLER) {
             if (facing == null) {
-                // 尝试获取L2背包虚拟物品栏并包装为只读
-                IItemHandlerModifiable l2BackpackInv = L2BackpackCompat.getBackpackInventory(this);
-                if (l2BackpackInv != null) {
-                    return LazyOptional.of(() -> new CombinedInvWrapper(armorInvWrapper, handsInvWrapper, maidInv, maidBauble, l2BackpackInv)).cast();
-                }
                 return LazyOptional.of(() -> new CombinedInvWrapper(armorInvWrapper, handsInvWrapper, maidInv, maidBauble)).cast();
             }
             if (facing.getAxis().isVertical()) {
