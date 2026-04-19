@@ -73,7 +73,7 @@ public class L2BackpackHandlers {
 	 * 监听女仆拾取物品事件，处理物品进入背包
 	 * 优先级：高，确保在其他处理器之前执行
 	 */
-	@SubscribeEvent(priority = EventPriority.HIGH)
+	@SubscribeEvent(priority = EventPriority.HIGHEST)
 	public void onMaidPickup(MaidPickupEvent.ItemResultPre event) {
 		EntityMaid maid = event.getMaid();
 		ItemEntity itemEntity = event.getEntityItem();
